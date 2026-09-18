@@ -1,6 +1,6 @@
 {
   "name": "ESPOtaPortal",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "A lightweight OTA portal for ESP32 firmware and filesystem images.",
   "keywords": [
     "esp32",
