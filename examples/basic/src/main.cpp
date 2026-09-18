@@ -2,7 +2,7 @@
 #include <LittleFS.h>
 #include <WebServer.h>
 #include <WiFi.h>
-#include <EspOtaPortal.h>
+#include <OtaPortal.h>
 
 #ifndef WIFI_SSID
 #define WIFI_SSID ""
@@ -13,7 +13,7 @@
 #endif
 
 WebServer server(80);
-EspOtaPortal portal;
+OtaPortal portal;
 
 void setup() {
     Serial.begin(115200);

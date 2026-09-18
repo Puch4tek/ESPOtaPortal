@@ -34,7 +34,7 @@ lib_deps =
 Install the library from the ZIP archive or by adding it to your Arduino libraries folder, then include it with:
 
 ```cpp
-#include <EspOtaPortal.h>
+#include <OtaPortal.h>
 ```
 
 ## Quick start
@@ -42,10 +42,10 @@ Install the library from the ZIP archive or by adding it to your Arduino librari
 ```cpp
 #include <LittleFS.h>
 #include <WebServer.h>
-#include <EspOtaPortal.h>
+#include <OtaPortal.h>
 
 WebServer server(80);
-EspOtaPortal portal;
+OtaPortal portal;
 
 void setup() {
   Serial.begin(115200);
@@ -73,10 +73,10 @@ The repository includes a full example at `examples/basic/` showing Wi-Fi setup,
 
 ## API
 
-### `EspOtaPortal`
+### `OtaPortal`
 
 ```cpp
-EspOtaPortal portal;
+OtaPortal portal;
 ```
 
 ### Configuration

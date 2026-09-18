@@ -1,4 +1,4 @@
-#include "EspOtaPortal.h"
+#include "OtaPortal.h"
 
 #include "FS.h"
 #include <LittleFS.h>
@@ -40,21 +40,21 @@ size_t filesystemUsedBytes() {
 }
 } // namespace
 
-EspOtaPortal::EspOtaPortal() {}
+OtaPortal::OtaPortal() {}
 
-EspOtaPortal::~EspOtaPortal() {
+OtaPortal::~OtaPortal() {
     if (_restartTimer) esp_timer_delete(_restartTimer);
 }
-void EspOtaPortal::setDeviceName(const char* name) { _deviceName = name ? name : "ESP32"; }
-void EspOtaPortal::setDeviceId(const char* id) { _deviceId = id ? id : ""; }
-void EspOtaPortal::setCredentials(const char* user, const char* password) { _username = user ? user : ""; _password = password ? password : ""; }
-void EspOtaPortal::setBasePath(const char* path) { _basePath = normalisePath(path); PORTAL_LOG("Base path: %s", _basePath.c_str()); }
-void EspOtaPortal::setOnStart(Hook hook) { _onStart = hook; }
-void EspOtaPortal::setOnEnd(Hook hook) { _onEnd = hook; }
+void OtaPortal::setDeviceName(const char* name) { _deviceName = name ? name : "ESP32"; }
+void OtaPortal::setDeviceId(const char* id) { _deviceId = id ? id : ""; }
+void OtaPortal::setCredentials(const char* user, const char* password) { _username = user ? user : ""; _password = password ? password : ""; }
+void OtaPortal::setBasePath(const char* path) { _basePath = normalisePath(path); PORTAL_LOG("Base path: %s", _basePath.c_str()); }
+void OtaPortal::setOnStart(Hook hook) { _onStart = hook; }
+void OtaPortal::setOnEnd(Hook hook) { _onEnd = hook; }
 
-void EspOtaPortal::begin(WebServer& server) {
+void OtaPortal::begin(WebServer& server) {
     esp_timer_create_args_t timerArgs = {};
-    timerArgs.callback = &EspOtaPortal::restartTimerCallback;
+    timerArgs.callback = &OtaPortal::restartTimerCallback;
     timerArgs.arg = this;
     timerArgs.name = "ota_restart";
     const esp_err_t result = esp_timer_create(&timerArgs, &_restartTimer);
@@ -110,9 +110,9 @@ void EspOtaPortal::begin(WebServer& server) {
 }
 
 #if ESPOTA_PORTAL_HAS_ASYNC
-void EspOtaPortal::begin(AsyncWebServer& server) {
+void OtaPortal::begin(AsyncWebServer& server) {
     esp_timer_create_args_t timerArgs = {};
-    timerArgs.callback = &EspOtaPortal::restartTimerCallback;
+    timerArgs.callback = &OtaPortal::restartTimerCallback;
     timerArgs.arg = this;
     timerArgs.name = "ota_restart";
     const esp_err_t result = esp_timer_create(&timerArgs, &_restartTimer);
@@ -149,7 +149,7 @@ void EspOtaPortal::begin(AsyncWebServer& server) {
 }
 #endif
 
-bool EspOtaPortal::beginUpload(UploadTarget target) {
+bool OtaPortal::beginUpload(UploadTarget target) {
     if (_uploadActive) {
         _lastError = "Another update is already in progress";
         _uploadFailed = true;
@@ -181,7 +181,7 @@ bool EspOtaPortal::beginUpload(UploadTarget target) {
     }
     return _uploadActive;
 }
-bool EspOtaPortal::writeUpload(const uint8_t* data, size_t length) {
+bool OtaPortal::writeUpload(const uint8_t* data, size_t length) {
     if (!_uploadActive || _uploadFailed) return false;
     if (Update.write(const_cast<uint8_t*>(data), length) != length) {
         _lastError = Update.errorString();
@@ -191,7 +191,7 @@ bool EspOtaPortal::writeUpload(const uint8_t* data, size_t length) {
     }
     _uploadedBytes += length; return true;
 }
-bool EspOtaPortal::finishUpload() {
+bool OtaPortal::finishUpload() {
     if (!_uploadActive || _uploadFailed) {
         abortUpload(); return false;
     } _uploadActive = false;
@@ -208,14 +208,14 @@ bool EspOtaPortal::finishUpload() {
     scheduleRestart();
     return true;
 }
-void EspOtaPortal::abortUpload() {
+void OtaPortal::abortUpload() {
     if (_uploadActive) Update.abort();
     _uploadActive = false;
     _uploadFailed = true;
     if (_lastError.isEmpty()) _lastError = "Upload was cancelled";
     PORTAL_LOG("Update aborted: %s", _lastError.c_str());
 }
-void EspOtaPortal::scheduleRestart() {
+void OtaPortal::scheduleRestart() {
     _restartScheduled = false;
     if (!_restartTimer) {
         PORTAL_LOG("Restart timer unavailable; restart the device manually");
@@ -226,13 +226,13 @@ void EspOtaPortal::scheduleRestart() {
     if (_restartScheduled) PORTAL_LOG("Restart scheduled in %u ms", static_cast<unsigned>(kRestartDelayMicroseconds / 1000));
     else PORTAL_LOG("Could not schedule restart: %d", static_cast<int>(result));
 }
-void EspOtaPortal::restartTimerCallback(void* argument) {
-    auto* portal = static_cast<EspOtaPortal*>(argument);
+void OtaPortal::restartTimerCallback(void* argument) {
+    auto* portal = static_cast<OtaPortal*>(argument);
     PORTAL_LOG("Restarting after %s update", portal->_uploadTarget == UploadTarget::Firmware ? "firmware" : "filesystem");
 
     ESP.restart();
 }
-size_t EspOtaPortal::uploadCapacity(UploadTarget target) const {
+size_t OtaPortal::uploadCapacity(UploadTarget target) const {
     if (target == UploadTarget::Firmware) {
         const esp_partition_t* partition = esp_ota_get_next_update_partition(nullptr);
         return partition ? partition->size : 0;
@@ -240,10 +240,10 @@ size_t EspOtaPortal::uploadCapacity(UploadTarget target) const {
     const esp_partition_t* partition = filesystemPartition();
     return partition ? partition->size : 0;
 }
-bool EspOtaPortal::hasCredentials() const {
+bool OtaPortal::hasCredentials() const {
     return !_username.isEmpty();
 }
-String EspOtaPortal::deviceInfoJson() const {
+String OtaPortal::deviceInfoJson() const {
     uint8_t mac[6] = {}; esp_read_mac(mac, ESP_MAC_WIFI_STA);
     char macText[18], fallback[16];
     snprintf(macText, sizeof(macText), "%02X:%02X:%02X:%02X:%02X:%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
@@ -252,19 +252,19 @@ String EspOtaPortal::deviceInfoJson() const {
         snprintf(fallback, sizeof(fallback), "ESP-%02X%02X%02X", mac[3], mac[4], mac[5]); id = fallback;
     } return "{\"name\":\"" + jsonEscape(_deviceName.isEmpty() ? "ESP OTA Portal" : _deviceName) + "\",\"id\":\"" + jsonEscape(id) + "\",\"mac\":\"" + macText + "\",\"firmware\":{\"used\":" + String(ESP.getSketchSize()) + ",\"capacity\":" + String(uploadCapacity(UploadTarget::Firmware)) + "},\"filesystem\":{\"used\":" + String(filesystemUsedBytes()) + ",\"capacity\":" + String(uploadCapacity(UploadTarget::Filesystem)) + "}}";
 }
-String EspOtaPortal::jsonSuccess() const {
+String OtaPortal::jsonSuccess() const {
     return String("{\"ok\":true,\"restartRequired\":true,\"restarting\":") + (_restartScheduled ? "true" : "false") + "}";
 }
-String EspOtaPortal::jsonError() const {
+String OtaPortal::jsonError() const {
     return "{\"ok\":false,\"error\":\"" + jsonEscape(_lastError.isEmpty() ? "Update failed" : _lastError) + "\"}";
 }
-String EspOtaPortal::jsonEscape(const String& value) {
+String OtaPortal::jsonEscape(const String& value) {
     String escaped; escaped.reserve(value.length());
     for (size_t i = 0; i < value.length(); ++i) {
         const char c = value[i]; if (c == '"' || c == '\\') escaped += '\\'; if (c == '\n') escaped += F("\\n"); else if (c == '\r') escaped += F("\\r"); else escaped += c;
     } return escaped;
 }
-String EspOtaPortal::normalisePath(const char* path) {
+String OtaPortal::normalisePath(const char* path) {
     String result = path && *path ? path : "/ota";
     if (!result.startsWith("/")) result = String("/") + result;
     while (result.length() > 1 && result.endsWith("/")) result.remove(result.length() - 1);

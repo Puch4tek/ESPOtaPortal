@@ -6,12 +6,12 @@
 class WebServer;
 class AsyncWebServer;
 
-class EspOtaPortal {
+class OtaPortal {
 public:
     using Hook = void (*)();
 
-    EspOtaPortal();
-    ~EspOtaPortal();
+    OtaPortal();
+    ~OtaPortal();
     void setDeviceName(const char* name);
     void setDeviceId(const char* id);
     void setCredentials(const char* username, const char* password);
