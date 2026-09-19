@@ -715,8 +715,8 @@ static const char OTA_PAGE[] PROGMEM = R"html(
                 }
             };
             dropzone.onclick = e => {
-                if (e.target !== clear) {
-                    input.click();
+                if (e.target === clear) {
+                    return;
                 }
             };
         });
