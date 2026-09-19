@@ -7,16 +7,18 @@ static const char OTA_PAGE[] PROGMEM = R"html(
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark">
     <title>ESP OTA Portal</title>
 
     <script>
-        const systemTheme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-        document.documentElement.dataset.theme = systemTheme;
+        window.__espotaThemeQuery = matchMedia('(prefers-color-scheme: dark)');
+        window.__espotaThemePref = localStorage.getItem('espota-theme') || (window.__espotaThemeQuery.matches ? 'dark' : 'light');
+        document.documentElement.dataset.theme = window.__espotaThemePref;
     </script>
 
     <style>
         :root {
-            color-scheme: light;
+            color-scheme: light dark;
             --bg: #f5f5f7;
             --card: #fff;
             --ink: #1d1d1f;
@@ -31,6 +33,11 @@ static const char OTA_PAGE[] PROGMEM = R"html(
             --card-shadow: 0 3px 12px #0000000a;
             --tab-shadow: 0 1px 3px #0002;
             --good: #1d8a4e;
+        }
+
+        html,
+        body {
+            background-color: var(--bg);
         }
 
         html[data-theme=dark] {
@@ -71,6 +78,7 @@ static const char OTA_PAGE[] PROGMEM = R"html(
         .topbar {
             display: flex;
             justify-content: flex-end;
+            margin-bottom: 12px;
         }
 
         .theme {
@@ -193,7 +201,7 @@ static const char OTA_PAGE[] PROGMEM = R"html(
 
         button.upload {
             width: 100%;
-            margin-top: 12px;
+            margin-top: 20px;
             padding: 12px;
             border: 0;
             border-radius: 10px;
@@ -392,16 +400,16 @@ static const char OTA_PAGE[] PROGMEM = R"html(
 </head>
 <body>
     <main>
-        <div class="topbar">
-            <button
-                class="theme"
-                id="theme"
-                type="button"
-            >
-                Dark
-            </button>
-        </div>
-        <header class="hero">
+    <div class="topbar">
+        <button
+            class="theme"
+            id="theme"
+            type="button"
+        >
+            Light
+        </button>
+    </div>
+    <header class="hero">
             <h1 id="name">
                 ESP OTA Portal
             </h1>
@@ -609,25 +617,25 @@ static const char OTA_PAGE[] PROGMEM = R"html(
                 : (n / 1048576).toFixed(2) + ' MiB';
         const api = n =>
             location.pathname.replace(/\/$/, '') + '/api/' + n;
-        function theme(mode) {
+        const themeQuery = window.__espotaThemeQuery || matchMedia('(prefers-color-scheme: dark)');
+        function applyTheme(mode, persist) {
             document.documentElement.dataset.theme = mode;
-            $('#theme').textContent =
-                mode == 'dark'
-                    ? 'Light mode'
-                    : 'Dark mode';
+            window.__espotaThemePref = mode;
+            $('#theme').textContent = (mode === 'dark' ? 'Dark' : 'Light');
+            if (persist) {
+                localStorage.setItem('espota-theme', mode);
+            }
         }
-        theme(
-            matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-        );
-        matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-            theme(e.matches ? 'dark' : 'light');
+        applyTheme(localStorage.getItem('espota-theme') || (themeQuery.matches ? 'dark' : 'light'));
+        themeQuery.addEventListener('change', e => {
+            localStorage.removeItem('espota-theme');
+            applyTheme(e.matches ? 'dark' : 'light', false);
         });
-        $('#theme').onclick = () =>
-            theme(
-                document.documentElement.dataset.theme == 'dark'
-                    ? 'light'
-                    : 'dark'
-            );
+        $('#theme').onclick = () => {
+            const current = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
+            const next = current === 'dark' ? 'light' : 'dark';
+            applyTheme(next, true);
+        };
         function render(d) {
             state = d;
             $('#name').textContent = d.name;
